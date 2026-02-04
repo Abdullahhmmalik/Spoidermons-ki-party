@@ -10,12 +10,11 @@
     text-align: center;
     margin-top: 50px;
     background: #ffecec;
-    transition: background 0.5s ease;
+    transition: background 0.3s ease;
   }
   h1 {
     font-size: 2.2rem;
     color: #c0392b;
-    animation: fadeIn 1s ease-out;
   }
   button {
     font-size: 1.3rem;
@@ -47,9 +46,17 @@
     min-height: 120px;
     text-align: center;
   }
-  @keyframes fadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+
+  /* Flash animations */
+  @keyframes flashGold {
+    0% { background: #ffecec; }
+    50% { background: gold; }
+    100% { background: #ffecec; }
+  }
+  @keyframes flashBlue {
+    0% { background: #ffecec; }
+    50% { background: #a0c4ff; }
+    100% { background: #ffecec; }
   }
 </style>
 </head>
@@ -70,9 +77,11 @@ const noBtn = document.getElementById("noBtn");
 const messages = document.getElementById("messages");
 const sax = document.getElementById("saxSound");
 const sad = document.getElementById("sadSound");
-let yesCount = 0;
 
-// Utility: typewriter effect
+let yesCount = 0;
+let noClicked = false;
+
+// Typing effect
 function typeMessage(text, delay = 50, callback) {
   let i = 0;
   messages.innerHTML = "";
@@ -86,66 +95,69 @@ function typeMessage(text, delay = 50, callback) {
   }, delay);
 }
 
-// Flash background colors
-function flashBackground(color, duration = 500) {
-  const original = document.body.style.background;
-  document.body.style.background = color;
+// Flash background
+function flashBackground(color) {
+  if (color === "gold") {
+    document.body.style.animation = "flashGold 1s ease-in-out";
+  } else if (color === "blue") {
+    document.body.style.animation = "flashBlue 1s ease-in-out";
+  }
   setTimeout(() => {
-    document.body.style.background = original;
-  }, duration);
+    document.body.style.animation = "";
+  }, 1000);
 }
 
-// YES button logic
+// YES button
 yesBtn.addEventListener("click", () => {
+  if (noClicked) return; // stop if NO already clicked
   yesCount++;
   sax.currentTime = 0;
   sax.play();
-  
+
   if (yesCount === 1) {
     typeMessage("Really 👉🏿👈🏿🥺 are you sure?");
-  } else {
-    typeMessage("I know you don’t mean it but yayayay 🥰🥰🥰🤭");
+  } else if (yesCount === 2) {
+    typeMessage("I know you don’t mean it but yayayay 🥰🥰🥰🤭", 50, () => {
+      flashBackground("gold");
+      typeMessage("Congratulations, you are Abdullah's valentine", 50);
+      yesBtn.style.display = "none";
+      noBtn.style.display = "none";
+    });
   }
 });
 
-// YES button dodges
+// YES button dodge
 yesBtn.addEventListener("mouseover", () => {
-  const x = Math.random() * (window.innerWidth - yesBtn.clientWidth);
-  const y = Math.random() * (window.innerHeight - yesBtn.clientHeight);
-  yesBtn.style.transform = `translate(${x}px, ${y}px)`;
+  if (yesCount < 2 && !noClicked) {
+    const x = Math.random() * (window.innerWidth - yesBtn.clientWidth);
+    const y = Math.random() * (window.innerHeight - yesBtn.clientHeight);
+    yesBtn.style.transform = `translate(${x}px, ${y}px)`;
+  }
 });
 
-// NO button logic with cinematic backgrounds
+// NO button
 noBtn.addEventListener("click", () => {
+  if (noClicked) return;
+  noClicked = true;
+  sax.pause(); // stop sax immediately
   sax.currentTime = 0;
-  sax.play();
-  flashBackground("gold", 1200); // gold flash for congratulations
+
+  flashBackground("gold");
   typeMessage("🎉 Congratulations, you are my Valentine 👉🏿👈🏿", 50, () => {
-    
     setTimeout(() => {
       typeMessage("nah… I know you hate me 😓😓 it was just a prank", 50, () => {
-        
         setTimeout(() => {
           sad.currentTime = 0;
           sad.play();
-          document.body.style.background = "#a0c4ff"; // blue-ish sad background
-          typeMessage("ngl… you made Abdullah sad 🥺🥺😓😢", 50, () => {
-            setTimeout(() => {
-              document.body.style.background = "#ffecec"; // reset background
-            }, 1000);
+          flashBackground("blue");
+          typeMessage("ngl… you made Abdullah sad 😢", 50, () => {
+            yesBtn.style.display = "none";
+            noBtn.style.display = "none";
           });
-          
         }, 500);
       });
     }, 1200);
   });
-
-  // reset YES count and button position for next victim
-  setTimeout(() => {
-    yesCount = 0;
-    messages.innerHTML = "";
-    yesBtn.style.transform = "translate(0,0)";
-  }, 7000);
 });
 </script>
 
