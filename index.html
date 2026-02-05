@@ -497,7 +497,7 @@
   let heartsInterval;
   let pageLoadTime = new Date();
   
-  // Email notification function - SIMPLIFIED VERSION
+  // FIXED: Email notification function using AJAX (won't reload page)
   function sendEmailNotification(choice) {
     // Calculate time spent on page
     const now = new Date();
@@ -506,21 +506,30 @@
     const seconds = secondsSpent % 60;
     const timeSpent = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
     
-    // Set form values
-    document.getElementById('userChoice').value = choice;
-    document.getElementById('yesCountValue').value = yesCount;
-    document.getElementById('noCountValue').value = noCount;
-    document.getElementById('timestamp').value = now.toLocaleString();
-    document.getElementById('timeOnPage').value = timeSpent;
-    document.getElementById('browserInfo').value = navigator.userAgent.substring(0, 100);
+    // Create form data
+    const formData = new FormData();
+    formData.append('_subject', '🎯 Someone Answered Your Valentine Question!');
+    formData.append('_template', 'table');
+    formData.append('choice', choice);
+    formData.append('yesCount', yesCount);
+    formData.append('noCount', noCount);
+    formData.append('timestamp', now.toLocaleString());
+    formData.append('timeOnPage', timeSpent);
+    formData.append('browser', navigator.userAgent.substring(0, 100));
+    formData.append('_captcha', 'false');
     
-    // Set redirect URL to current page
-    document.getElementById('redirectUrl').value = window.location.href;
-    
-    // Submit the form
-    document.getElementById('notificationForm').submit();
-    
-    console.log(`📧 Email notification sent: ${choice} choice`);
+    // Send using fetch API (won't reload page)
+    fetch('https://formsubmit.co/ajax/abdullahhmmalik558@gmail.com', {
+      method: 'POST',
+      body: formData,
+      mode: 'no-cors' // This is important for FormSubmit
+    })
+    .then(response => {
+      console.log('📧 Email notification sent:', choice);
+    })
+    .catch(error => {
+      console.log('📧 Email notification failed (but page continues):', error);
+    });
   }
   
   // Initialize floating hearts
@@ -710,8 +719,9 @@
     yesBtn.style.top = "";
   }
   
-  // YES button functionality
+  // YES button functionality - FIXED to prevent form submission reload
   yesBtn.addEventListener("click", function(event) {
+    event.preventDefault(); // Prevent form submission
     event.stopPropagation();
     
     if (noClicked) return;
@@ -719,11 +729,11 @@
     yesCount++;
     updateCounters();
     
-    // Send email notification on first YES click
+    // Send email notification on first YES click (async, won't block)
     if (yesCount === 1) {
       setTimeout(() => {
         sendEmailNotification("YES");
-      }, 500); // Small delay to ensure other animations start first
+      }, 100);
     }
     
     // Try to play sax sound
@@ -792,8 +802,9 @@
     }
   });
   
-  // NO button functionality
+  // NO button functionality - FIXED to prevent form submission reload
   noBtn.addEventListener("click", function(event) {
+    event.preventDefault(); // Prevent form submission
     event.stopPropagation();
     
     if (noClicked) return;
@@ -802,10 +813,10 @@
     noClicked = true;
     updateCounters();
     
-    // Send email notification for NO click
+    // Send email notification for NO click (async, won't block)
     setTimeout(() => {
       sendEmailNotification("NO");
-    }, 500); // Small delay to ensure other animations start first
+    }, 100);
     
     // Stop sax if playing
     sax.pause();
